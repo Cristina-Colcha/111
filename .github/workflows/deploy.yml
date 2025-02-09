@@ -25,7 +25,6 @@ jobs:
       # Paso 3: Cambiar al directorio del Dockerfile y construir la imagen
       - name: Build Docker image
         run: |
-          cd BACKEND/calculator-microservices
           docker build \
             --label "commit_sha=${{ github.sha }}" \
             -t ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest .
