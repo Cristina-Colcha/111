@@ -45,7 +45,7 @@ jobs:
           echo "${{ secrets.AWS_EC2_KEY }}" > miclave.pem
           chmod 600 miclave.pem
 
-            # Paso 2: Actualizar e instalar Docker en la instancia EC2 (Instancia 1)
+        # Paso 2: Actualizar e instalar Docker en la instancia EC2 (Instancia 1)
       - name: Update system and install Docker (Instance 1)
         run: |
           ssh -o StrictHostKeyChecking=no -i miclave.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} "sudo yum update -y"
