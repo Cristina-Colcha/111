@@ -22,7 +22,7 @@
         <ul id="history"></ul>
     </div>
     <script>
-        const API_URL = 'http://18.233.225.148:3010/';
+        const API_URL = 'http://18.233.225.148:3010';
 
         async function calculate(operation) {
             const a = document.getElementById('a').value;
@@ -38,12 +38,13 @@
             const data = await response.json();
             const historyElement = document.getElementById('history');
             historyElement.innerHTML = '';
-            data.operations.forEach(operation => {
+            // Cambié `data.operations` a `data` si la respuesta ya es un array
+            data.forEach(operation => {
                 const listItem = document.createElement('li');
                 listItem.innerText = `${operation.type} ${operation.a} and ${operation.b} = ${operation.result}`;
                 historyElement.appendChild(listItem);
             });
-        }
+        }     
 
         getHistory();
     </script>
