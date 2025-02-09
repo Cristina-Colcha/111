@@ -17,7 +17,7 @@ const operationSchema = new mongoose.Schema({
     result: Number,
     createdAt: { type: Date, default: Date.now },
 });
-
+ 
 const Operation = mongoose.model('Operation', operationSchema);
 
 app.use(cors());
