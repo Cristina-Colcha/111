@@ -37,17 +37,23 @@
             const response = await fetch(`${API_URL}/history`);
             const data = await response.json();
             
-            console.log("Respuesta de /history:", data); // <-- Agrega esto
+            console.log("Respuesta de /history:", data); // Depuración para ver la estructura real
         
             const historyElement = document.getElementById('history');
             historyElement.innerHTML = '';
         
-            data.forEach(operation => { // <-- Aquí está el error
-                const listItem = document.createElement('li');
-                listItem.innerText = `${operation.type} ${operation.a} and ${operation.b} = ${operation.result}`;
-                historyElement.appendChild(listItem);
-            });
+            // Verificamos si "operations" existe y es un array
+            if (Array.isArray(data.operations)) {  
+                data.operations.forEach(operation => {
+                    const listItem = document.createElement('li');
+                    listItem.innerText = `${operation.type} ${operation.a} and ${operation.b} = ${operation.result}`;
+                    historyElement.appendChild(listItem);
+                });
+            } else {
+                console.error("Error: La respuesta de la API no contiene un array 'operations'", data);
+            }
         }
+      
         
 
         getHistory();
