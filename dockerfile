@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3010
 
 # Comando para ejecutar la aplicación
-CMD ["node", "app.js"]
+CMD ["node", "server.js"]
