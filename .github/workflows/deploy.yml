@@ -57,6 +57,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << 'EOF'
           sudo docker stop calculator-microservices || true
           sudo docker rm calculator-microservices || true
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
-          sudo docker run -d -p 3010:3010 --name calculator-microservices ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
-          EOF
+            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
+            sudo docker run -d -p 8080:8080 --name calculator-microservices ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
+            echo "Verificando contenedores en ejecución..."
+            sudo docker ps -a
+            EOF
+        
