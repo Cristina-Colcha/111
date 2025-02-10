@@ -4,12 +4,32 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "Calculadora/**"  # Solo se ejecutará si hay cambios en Calculadora
-      - "weekly-planner/services/create_service/**"  # Solo se ejecutará si hay cambios en WP-create
+      - "Calculadora/**"
+      - "weekly-planner/services/create_service/**"
 
 jobs:
+  check-paths:
+    runs-on: ubuntu-latest
+    outputs:
+      calculadora: ${{ steps.filter.outputs.calculadora }}
+      wp_create: ${{ steps.filter.outputs.wp_create }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Filter changes
+        id: filter
+        uses: dorny/paths-filter@v2
+        with:
+          filters: |
+            calculadora:
+              - "Calculadora/**"
+            wp_create:
+              - "weekly-planner/services/create_service/**"
+
   build-and-push-Calculadora:
-    if: contains(github.event.head_commit.message, 'Calculadora')  
+    needs: check-paths
+    if: needs.check-paths.outputs.calculadora == 'true'
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -38,14 +58,14 @@ jobs:
   deploy-Calculadora:
     needs: build-and-push-Calculadora
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'Calculadora')
+    if: needs.check-paths.outputs.calculadora == 'true'
     steps:
       - name: Set permissions for private key
         run: |
           echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Deploy Docker Container on AWS (Instance 1)
+      - name: Deploy Docker Container on AWS
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
           sudo yum update -y
@@ -64,7 +84,8 @@ jobs:
           EOF
 
   build-and-push-WP-create:
-    if: contains(github.event.head_commit.message, 'weekly-planner/services/create_service')  
+    needs: check-paths
+    if: needs.check-paths.outputs.wp_create == 'true'
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -93,14 +114,14 @@ jobs:
   deploy-WP-create:
     needs: build-and-push-WP-create
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'weekly-planner/services/create_service')
+    if: needs.check-paths.outputs.wp_create == 'true'
     steps:
       - name: Set permissions for private key
         run: |
           echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Deploy Docker Container on AWS (Instance 1)
+      - name: Deploy Docker Container on AWS
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
           sudo yum update -y
