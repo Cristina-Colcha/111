@@ -14,7 +14,7 @@ DB_HOST = os.getenv('DB_HOST', 'database-2.crgu1k6u14fx.us-east-1.rds.amazonaws.
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'gestion_horarios_db')
 WEBHOOK_URL = os.getenv("WEBHOOK_URL", "http://localhost:3030/webhook")
-
+ 
 app = FastAPI()
 
 
