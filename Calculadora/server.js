@@ -103,7 +103,7 @@ app.get('/add', async (req, res) => {
  *               type: object
  *               properties:
  *                 result:
- *                   type: number
+ *                   type: number 
  */
 app.get('/subtract', async (req, res) => {
     const { a, b } = req.query;
