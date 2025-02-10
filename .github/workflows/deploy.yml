@@ -2,10 +2,14 @@ name: Build, Push, and Deploy Docker Images (QA)
 
 on:
   push:
-    branches: [ "main" ] 
+    branches: [ "main" ]
+    paths:
+      - "Calculadora/**"  # Solo se ejecutará si hay cambios en Calculadora
+      - "weekly-planner/services/create_service/**"  # Solo se ejecutará si hay cambios en WP-create
 
 jobs:
-  build-and-push:
+  build-and-push-Calculadora:
+    if: contains(github.event.head_commit.message, 'Calculadora')  
     runs-on: ubuntu-latest
     env:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
@@ -22,6 +26,7 @@ jobs:
 
       - name: Build Docker image
         run: |
+          cd Calculadora
           docker build \
             --label "commit_sha=${{ github.sha }}" \
             -t ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest .
@@ -30,37 +35,85 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
 
-  deploy-aws:
-    needs: build-and-push
+  deploy-Calculadora:
+    needs: build-and-push-Calculadora
     runs-on: ubuntu-latest
-
+    if: contains(github.event.head_commit.message, 'Calculadora')
     steps:
       - name: Set permissions for private key
         run: |
           echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Update system and install Docker (Instance 1)
+      - name: Deploy Docker Container on AWS (Instance 1)
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
           sudo yum update -y
           if ! command -v docker &> /dev/null; then
-            echo "Docker not found, installing..."
             sudo yum install -y docker
           fi
           sudo systemctl start docker
           sudo systemctl enable docker
-          EOF
-
-      - name: Deploy Docker Container (Instance 1)
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
+          
           sudo docker stop calculator-microservices || true
           sudo docker rm calculator-microservices || true
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
           sudo docker run -d -p 3010:3010 --name calculator-microservices ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
-          echo "Verificando contenedores en ejecución..."
+          
           sudo docker ps -a
           EOF
 
-        
+  build-and-push-WP-create:
+    if: contains(github.event.head_commit.message, 'weekly-planner/services/create_service')  
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          cd weekly-planner/services/create_service
+          docker build \
+            --label "commit_sha=${{ github.sha }}" \
+            -t ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest .
+
+      - name: Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
+
+  deploy-WP-create:
+    needs: build-and-push-WP-create
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'weekly-planner/services/create_service')
+    steps:
+      - name: Set permissions for private key
+        run: |
+          echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Deploy Docker Container on AWS (Instance 1)
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
+          sudo yum update -y
+          if ! command -v docker &> /dev/null; then
+            sudo yum install -y docker
+          fi
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          
+          sudo docker stop WPcreate-microservices || true
+          sudo docker rm WPcreate-microservices || true
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
+          sudo docker run -d -p 3020:3020 --name WPcreate-microservices ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
+          
+          sudo docker ps -a
+          EOF
