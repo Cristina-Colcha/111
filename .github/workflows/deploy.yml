@@ -102,7 +102,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd weekly-planner/services/create_service
+          cd weekly-planner/services/create_service/app
           docker build \
             --label "commit_sha=${{ github.sha }}" \
             -t ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest .
