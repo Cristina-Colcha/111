@@ -105,11 +105,11 @@ jobs:
           cd weekly-planner/services/create_service/app 
           docker build \
             --label "commit_sha=${{ github.sha }}" \
-            -t ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest .
+            -t ${{ secrets.DOCKER_USERNAME }}/wpcreate-microservices:latest .
 
       - name: Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/wpcreate-microservices:latest
 
   deploy-WP-create:
     needs: build-and-push-WP-create
@@ -131,10 +131,10 @@ jobs:
           sudo systemctl start docker
           sudo systemctl enable docker
           
-          sudo docker stop WPcreate-microservices || true
-          sudo docker rm WPcreate-microservices || true
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
-          sudo docker run -d -p 3020:3020 --name WPcreate-microservices ${{ secrets.DOCKER_USERNAME }}/WPcreate-microservices:latest
+          sudo docker stop wpcreate-microservices || true
+          sudo docker rm wpcreate-microservices || true
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/wpcreate-microservices:latest
+          sudo docker run -d -p 3020:3020 --name wpcreate-microservices ${{ secrets.DOCKER_USERNAME }}/wpcreate-microservices:latest
           
           sudo docker ps -a
           EOF
