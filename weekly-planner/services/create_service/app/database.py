@@ -8,7 +8,7 @@ DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'gestion_horarios_db')
 
 def get_db_connection():
-    try:
+    try: 
         conn = psycopg2.connect(
             host=DB_HOST,
             database=DB_NAME, 
