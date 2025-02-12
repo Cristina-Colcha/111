@@ -26,7 +26,7 @@ jobs:
               - "Calculadora/**"
             wp_create:
               - "weekly-planner/services/create_service/**"
-
+  # -------------------------------------CALCULADORA--------------------------------------------#
   build-and-push-Calculadora:
     needs: check-paths
     if: needs.check-paths.outputs.calculadora == 'true'
@@ -82,7 +82,8 @@ jobs:
           
           sudo docker ps -a
           EOF
-
+  # -------------------------------------wekkly-planner--------------------------------------------#
+    # -------------------------------------create--------------------------------------------#
   build-and-push-WP-create:
     needs: check-paths
     if: needs.check-paths.outputs.wp_create == 'true'
@@ -123,7 +124,7 @@ jobs:
 
       - name: Deploy Docker Container on AWS
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
+          ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@${{ secrets.AWS_EC2_HOST_QA2 }} << "EOF"
           sudo yum update -y
           if ! command -v docker &> /dev/null; then
             sudo yum install -y docker
