@@ -1,0 +1,76 @@
+name: Build, Push, and Deploy Create Availability
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "Calculadora/**"  # Cambios en esta carpeta activan el pipeline
+
+jobs:
+  build-and-push-Calculadora:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🔑 Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🛠️ Build Docker image
+        run: |
+          cd Calculadora
+          docker build \
+            --label "commit_sha=${{ github.sha }}" \
+            -t ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest .
+
+      - name: 🚀 Push Docker image to Docker Hub
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/calculator-prueba-microservices:latest
+
+  deploy-Calculadora:
+    runs-on: ubuntu-latest
+    needs: build-and-push-Calculadora  # Se ejecuta solo después del build
+    steps:
+      - name: 🔑 Set permissions for private key
+        run: |
+          echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: 🚀 Deploy Docker Container on AWS Red Hat
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem redhat@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
+          
+          # Actualizar paquetes en AMI Red Hat
+          sudo dnf update -y
+          
+          # Instalar Docker si no está presente
+          if ! command -v docker &> /dev/null; then
+            sudo dnf install -y dnf-plugins-core
+            sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            sudo dnf install -y docker-ce docker-ce-cli containerd.io
+          fi
+          
+          # Iniciar y habilitar Docker
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          sudo usermod -aG docker $USER
+
+          # Eliminar contenedor antiguo si existe
+          sudo docker stop calculator-prueba-microservices || true
+          sudo docker rm calculator-prueba-microservices || true
+          
+          # Descargar y ejecutar el nuevo contenedor
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
+          sudo docker run -d -p 3010:3010 --name calculator-prueba-microservices \
+            ${{ secrets.DOCKER_USERNAME }}/calculator-prueba-microservices:latest
+          
+          # Verificar contenedores en ejecución
+          sudo docker ps -a
+          
+          EOF
