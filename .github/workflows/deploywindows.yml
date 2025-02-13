@@ -33,47 +33,70 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
 
-  deploy-Calculadora:
-    runs-on: ubuntu-latest
-    needs: build-and-push-Calculadora
-    steps:
-      - name: 🔑 Set permissions for private key
-        run: |
-          echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
-          chmod 600 key.pem
-
-      - name: 🚀 Deploy Docker Container on AWS Debian EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem admin@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
-
-          # Actualizar paquetes en Debian
-          sudo apt update -y && sudo apt upgrade -y
-
-          # Verificar si Docker ya está instalado
-          if ! command -v docker &> /dev/null; then
-            echo "🛠 Instalando Docker..."
-            sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
-            curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            sudo apt update -y
-            sudo apt install -y docker-ce docker-ce-cli containerd.io
-            sudo usermod -aG docker admin
-            sudo systemctl start docker
-            sudo systemctl enable docker
-          else
-            echo "✅ Docker ya está instalado."
-          fi
-
-          # Eliminar contenedor antiguo si existe
-          sudo docker stop calculator-pruebad-microservices || true
-          sudo docker rm calculator-pruebad-microservices || true
-          
-          # Descargar y ejecutar el nuevo contenedor con la imagen correcta
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
-          sudo docker run -d -p 3010:3010 --name calculator-pruebad-microservices \
-            ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
-          
-          # Verificar contenedores en ejecución
-          sudo docker ps -a
-          
-          EOF
+          deploy-Calculadora:
+            runs-on: ubuntu-latest
+            needs: build-and-push-Calculadora
+            steps:
+              - name: 🔑 Set permissions for private key
+                run: |
+                  echo "${{ secrets.AWS_EC2_KEY }}" > key.pem
+                  chmod 600 key.pem
+        
+              - name: 🚀 Deploy Docker Container on AWS Debian EC2
+                run: |
+                  ssh -o StrictHostKeyChecking=no -i key.pem admin@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
+        
+                  echo "🔍 Verificando y habilitando SSH en la instancia..."
+        
+                  # Verificar si SSH está instalado, habilitado y ejecutándose
+                  if ! command -v sshd &> /dev/null; then
+                    echo "⚠️ SSH no está instalado, instalándolo ahora..."
+                    sudo apt update -y
+                    sudo apt install -y openssh-server
+                  fi
+        
+                  echo "✅ SSH instalado."
+        
+                  # Asegurar que SSH está habilitado y ejecutándose
+                  sudo systemctl enable ssh
+                  sudo systemctl start ssh
+        
+                  # Verificar el estado del servicio SSH
+                  sudo systemctl status ssh --no-pager || echo "⚠️ Advertencia: SSH aún no está activo."
+        
+                  echo "🟢 SSH está activo y en ejecución."
+        
+                  # Continuar con la instalación de Docker y el despliegue
+                  
+                  # Actualizar paquetes en Debian
+                  sudo apt update -y && sudo apt upgrade -y
+        
+                  # Verificar si Docker ya está instalado
+                  if ! command -v docker &> /dev/null; then
+                    echo "🛠 Instalando Docker..."
+                    sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+                    curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                    sudo apt update -y
+                    sudo apt install -y docker-ce docker-ce-cli containerd.io
+                    sudo usermod -aG docker admin
+                    sudo systemctl start docker
+                    sudo systemctl enable docker
+                  else
+                    echo "✅ Docker ya está instalado."
+                  fi
+        
+                  # Eliminar contenedor antiguo si existe
+                  sudo docker stop calculator-pruebad-microservices || true
+                  sudo docker rm calculator-pruebad-microservices || true
+                  
+                  # Descargar y ejecutar el nuevo contenedor con la imagen correcta
+                  sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
+                  sudo docker run -d -p 3010:3010 --name calculator-pruebad-microservices \
+                    ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
+                  
+                  # Verificar contenedores en ejecución
+                  sudo docker ps -a
+                  
+                  EOF
+        
