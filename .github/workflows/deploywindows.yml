@@ -27,11 +27,11 @@ jobs:
           cd Calculadora
           docker build \
             --label "commit_sha=${{ github.sha }}" \
-            -t ${{ secrets.DOCKER_USERNAME }}/calculator-pruebaD-microservices:latest .
+            -t ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest .
 
       - name: 🚀 Push Docker image to Docker Hub
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/calculator-pruebaD-microservices:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
 
   deploy-Calculadora:
     runs-on: ubuntu-latest
@@ -65,13 +65,13 @@ jobs:
           fi
 
           # Eliminar contenedor antiguo si existe
-          sudo docker stop calculator-pruebaD-microservices || true
-          sudo docker rm calculator-pruebaD-microservices || true
+          sudo docker stop calculator-pruebad-microservices || true
+          sudo docker rm calculator-pruebad-microservices || true
           
           # Descargar y ejecutar el nuevo contenedor con la imagen correcta
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-pruebaD-microservices:latest
-          sudo docker run -d -p 3010:3010 --name calculator-pruebaD-microservices \
-            ${{ secrets.DOCKER_USERNAME }}/calculator-pruebaD-microservices:latest
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
+          sudo docker run -d -p 3010:3010 --name calculator-pruebad-microservices \
+            ${{ secrets.DOCKER_USERNAME }}/calculator-pruebad-microservices:latest
           
           # Verificar contenedores en ejecución
           sudo docker ps -a
