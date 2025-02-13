@@ -9,7 +9,7 @@ const path = require('path');
 const app = express();
 const port = 3010;
 connectDB(); 
-
+ 
 const operationSchema = new mongoose.Schema({
     type: String,
     a: Number,
