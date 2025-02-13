@@ -27,7 +27,7 @@ jobs:
           cd Calculadora
           docker build \
             --label "commit_sha=${{ github.sha }}" \
-            -t ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest .
+            -t ${{ secrets.DOCKER_USERNAME }}/calculator-prueba-microservices:latest .
 
       - name: 🚀 Push Docker image to Docker Hub
         run: |
@@ -45,7 +45,7 @@ jobs:
       - name: 🚀 Deploy Docker Container on AWS Red Hat
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem redhat@${{ secrets.AWS_EC2_HOST_QA1 }} << "EOF"
-          
+
           # Actualizar paquetes en AMI Red Hat
           sudo dnf update -y
           
@@ -56,17 +56,16 @@ jobs:
             sudo dnf install -y docker-ce docker-ce-cli containerd.io
           fi
           
-          # Iniciar y habilitar Docker
+          # Iniciar y habilitar Docker si no está corriendo
           sudo systemctl start docker
           sudo systemctl enable docker
-          sudo usermod -aG docker $USER
-
+          
           # Eliminar contenedor antiguo si existe
           sudo docker stop calculator-prueba-microservices || true
           sudo docker rm calculator-prueba-microservices || true
           
-          # Descargar y ejecutar el nuevo contenedor
-          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-microservices:latest
+          # Descargar y ejecutar el nuevo contenedor con la imagen correcta
+          sudo docker pull ${{ secrets.DOCKER_USERNAME }}/calculator-prueba-microservices:latest
           sudo docker run -d -p 3010:3010 --name calculator-prueba-microservices \
             ${{ secrets.DOCKER_USERNAME }}/calculator-prueba-microservices:latest
           
